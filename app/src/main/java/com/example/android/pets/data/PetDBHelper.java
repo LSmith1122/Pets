@@ -4,12 +4,11 @@ import android.Manifest;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.widget.Toast;
 
 import com.example.android.pets.data.PetContract.PetEntry;
 
 public class PetDBHelper extends SQLiteOpenHelper {
-    private static Context mContext;
+    private Context mContext;
     public static final String DATABASE_NAME = "pets.db";
     public static final int DATABASE_VERSION = 1;
 
