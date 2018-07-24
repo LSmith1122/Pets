@@ -17,6 +17,7 @@ package com.example.android.pets;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
@@ -33,6 +34,7 @@ import android.widget.Toast;
 
 import com.example.android.pets.data.PetContract.PetEntry;
 import com.example.android.pets.data.PetDBHelper;
+import com.example.android.pets.data.PetProvider;
 
 import java.text.NumberFormat;
 
@@ -116,7 +118,6 @@ public class EditorActivity extends AppCompatActivity {
 
     private void insertPet() {
         int badID = -1;
-        SQLiteDatabase writableDB = mDBHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         String name = mNameEditText.getText().toString().trim();
         String breed = mBreedEditText.getText().toString().trim();
@@ -126,12 +127,7 @@ public class EditorActivity extends AppCompatActivity {
         values.put(PetEntry.COLUMN_PET_BREED, breed);
         values.put(PetEntry.COLUMN_PET_GENDER, gender);
         values.put(PetEntry.COLUMN_PET_WEIGHT, weight);
-        long newRowID = writableDB.insert(PetEntry.TABLE_NAME, null, values);
-        if (newRowID != badID) {
-            Toast.makeText(this, "Pet saved with id: " + newRowID, Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Error with saving pet.\nPlease fill in all data.", Toast.LENGTH_SHORT).show();
-        }
+        Uri uri = getContentResolver().insert(PetEntry.CONTENT_URI, values);
     }
 
     @Override
