@@ -28,6 +28,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetContract.PetEntry;
@@ -40,6 +41,7 @@ import com.example.android.pets.data.PetProvider;
 public class CatalogActivity extends AppCompatActivity {
     private final String LOG_TAG = PetProvider.class.getSimpleName();
     private PetDBHelper mDBHelper;
+    private final int zero = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,8 +122,10 @@ public class CatalogActivity extends AppCompatActivity {
                         break;
                     case PetEntry.GENDER_FEMALE:
                         currentGender = getString(R.string.gender_female);
+                        break;
                     default:
                         currentGender = getString(R.string.gender_unknown);
+                        break;
                 }
                 displayView.append(currentID + " - " + currentName + " - " + currentBreed + " - " + currentGender + " - " + currentWeight);
             }
@@ -151,17 +155,27 @@ public class CatalogActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // User clicked on a menu option in the app bar overflow menu
+        Intent intent = new Intent(CatalogActivity.this, EditorActivity.class);
+        Bundle bundle;
         switch (item.getItemId()) {
-            // Respond to a click on the "Insert dummy data" menu option
             case R.id.action_insert_dummy_data:
-                // Do nothing for now
                 insertPet();
                 displayDatabaseInfo();
                 return true;
-            // Respond to a click on the "Delete all entries" menu option
+            case R.id.action_update_pet:
+                bundle = new Bundle();
+                bundle.putString(PetContract.INTENT_EXTRA, PetContract.INTENT_UPDATE);
+                intent.putExtras(bundle);
+                startActivity(intent);
+                return true;
             case R.id.action_delete_all_entries:
-                // Do nothing for now
+                int deleteRows = getContentResolver().delete(PetEntry.CONTENT_URI, null, null);
+                if (deleteRows > zero) {
+                    Toast.makeText(this, "All data deleted", Toast.LENGTH_SHORT).show();
+                    displayDatabaseInfo();
+                } else {
+                    Toast.makeText(this, "Error deleting data", Toast.LENGTH_SHORT).show();
+                }
                 return true;
         }
         return super.onOptionsItemSelected(item);

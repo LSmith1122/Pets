@@ -23,6 +23,10 @@
     <!-- Title for the activity to add a new pet [CHAR LIMIT=20] -->
     <string name="editor_activity_title_new_pet">Add a Pet</string>
 
+    <string name="action_update_pet">Update Pet</string>
+
+    <string name="action_delete_pet">Delete Pet</string>
+
     <!-- Label for editor menu option to save pet and leave editor [CHAR LIMIT=20] -->
     <string name="action_save">Save</string>
 
@@ -47,6 +51,8 @@
     <!-- Text hint for name field in the editor [CHAR LIMIT=30] -->
     <string name="hint_pet_weight">Weight</string>
 
+    <string name="hint_pet_id">ID</string>
+
     <!-- Units for weight of the pet (kilograms) [CHAR LIMIT=5] -->
     <string name="unit_pet_weight">kg</string>
 
@@ -58,4 +64,18 @@
 
     <!-- Label for dropdown menu option if the pet is female [CHAR LIMIT=20] -->
     <string name="gender_female">Female</string>
+    <string name="illegal_exception_invalid_name">Pet requires a name</string>
+    <string name="illegal_exception_invalid_gender">Invalid gender value</string>
+    <string name="illegal_exception_invalid_weight">Invalid weight</string>
+    <string name="illegal_argument_exception_update_not_supported">Update is not supported for </string>
+    <string name="illegal_argument_exception_insertion_not_supported">Insertion is not supported for </string>
+    <string name="illegal_argument_exception_deletion_not_supported">Deletion is not supported for </string>
+    <string name="illegal_argument_exception_invalid_uri">Invalid URI</string>
+    <string name="update_pet_saved">Pet saved!</string>
+    <string name="update_error_saving_pet">Error saving pet&#8230;</string>
+    <string name="error_input_provide_attributes">Please provide valid input to update pet attributes</string>
+    <string name="error_input_provide_id">Pet ID is required</string>
+    <string name="error_input_provide_delete_attributes">Please provide either pet ID or Name</string>
+    <string name="digits_text">abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <!--<string name="provide_input_name">Pet name is required</string>-->
 </resources>
