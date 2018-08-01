@@ -77,7 +77,7 @@
     <string name="update_pet_saved">Pet saved!</string>
     <string name="update_error_saving_pet">Error saving pet&#8230;</string>
     <string name="error_input_provide_attributes">Please provide valid input to update pet attributes</string>
-    <string name="error_input_provide_id">Pet ID is required</string>
+    <string name="error_input_provide_attributes_for_deletion">Please provide valid pet attribute input</string>
     <string name="error_input_provide_delete_attributes">Please provide either pet ID or Name</string>
     <string name="digits_text">abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
 </resources>

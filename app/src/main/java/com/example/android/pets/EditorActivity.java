@@ -15,9 +15,12 @@
  */
 package com.example.android.pets;
 
+import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -41,13 +44,15 @@ import com.example.android.pets.data.PetDBHelper;
 /**
  * Allows user to create a new pet or edit an existing one.
  */
-public class EditorActivity extends AppCompatActivity {
+public class EditorActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
 
     private final int zero = 0;
     private int INTENT_MODE = zero;
     private final int INTENT_ADD = 0;
     private final int INTENT_UPDATE = 1;
     private final int INTENT_DELETE = 2;
+    private final int ASYNC_LOADER_ID = 0;
+    private final int CURSOR_LOADER_ID = 1;
 
     private EditText mIDEditText;
     private EditText mNameEditText;
@@ -103,7 +108,8 @@ public class EditorActivity extends AppCompatActivity {
                                     View.VISIBLE,
                                     View.VISIBLE,
                                     View.VISIBLE);
-                            displayInfoForSelectedPet(getSelectedCursor());
+                            LoaderManager loaderManager = getLoaderManager();
+                            loaderManager.initLoader(CURSOR_LOADER_ID, null, this).forceLoad();
                         } else {
                             setUI(View.VISIBLE,
                                     View.VISIBLE,
@@ -147,8 +153,8 @@ public class EditorActivity extends AppCompatActivity {
 
     private void displayInfoForSelectedPet(Cursor cursor) {
         if (cursor != null) {
-            int id = Integer.parseInt(String.valueOf(ContentUris.parseId(selectedPetURI)));
             cursor.moveToNext();
+            int id = Integer.parseInt(String.valueOf(ContentUris.parseId(selectedPetURI)));
             int nameColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_NAME);
             int breedColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_BREED);
             int weightColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_WEIGHT);
@@ -232,7 +238,7 @@ public class EditorActivity extends AppCompatActivity {
         return false;
     }
 
-    private void updatePet() {          // TODO: Create 2 different scenarios for updating unknown Pet and updating selected Pet (from CatalogActivity)
+    private void updatePet() {
         int newRowID = badID;
         long id = 0;
         ContentValues values = new ContentValues();
@@ -246,22 +252,6 @@ public class EditorActivity extends AppCompatActivity {
             Uri uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
             newRowID = getContentResolver().update(uriID, values, selection, selectionArgs);
         }
-    }
-
-    private Cursor getSelectedCursor() {
-        Cursor selectedCursor = null;
-        try {
-            String[] projection = {
-                    PetEntry._ID,
-                    PetEntry.COLUMN_PET_NAME,
-                    PetEntry.COLUMN_PET_BREED,
-                    PetEntry.COLUMN_PET_WEIGHT,
-                    PetEntry.COLUMN_PET_GENDER};
-            selectedCursor = getContentResolver().query(selectedPetURI, projection, null, null, null);
-        } catch (NullPointerException e) {
-            Log.e("Error", "Error processing selected cursor", e);
-        }
-        return selectedCursor;
     }
 
     private void implementContentValues(ContentValues values) {
@@ -286,13 +276,13 @@ public class EditorActivity extends AppCompatActivity {
         String idString = mIDEditText.getText().toString().trim();
         String nameString = mNameEditText.getText().toString().trim();
         String breedString = mBreedEditText.getText().toString().trim();
-        int weightInt = Integer.valueOf(mWeightEditText.getText().toString().trim());
+        String weightString = mWeightEditText.getText().toString().trim();
+        int genderInt = badID;
         if (mGenderSelected) {
-            int genderInt = mGender;
+            genderInt = mGender;
         }
-        if (isEmpty(idString)) {       // is empty...
-//            Toast.makeText(this, getApplicationContext().getResources().getString(R.string.error_input_provide_id), Toast.LENGTH_SHORT).show();
-
+        if (isEmpty(idString) && isEmpty(nameString) && isEmpty(breedString) && isEmpty(weightString) && !mGenderSelected) {       // No ID provided by User
+            Toast.makeText(this, getApplicationContext().getResources().getString(R.string.error_input_provide_attributes_for_deletion), Toast.LENGTH_LONG).show();
         } else {
             String selection = PetEntry._ID + "=?";
             long id = Long.valueOf(idString);
@@ -356,5 +346,40 @@ public class EditorActivity extends AppCompatActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void clearInputFields() {
+        mNameEditText.setText(null);
+        mBreedEditText.setText(null);
+        mWeightEditText.setText(null);
+        mGenderSpinner.setSelection(PetEntry.GENDER_UNKNOWN);
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int loaderID, Bundle bundle) {
+        switch (loaderID) {
+            case CURSOR_LOADER_ID:
+                String[] projection = {
+                        PetEntry._ID,
+                        PetEntry.COLUMN_PET_NAME,
+                        PetEntry.COLUMN_PET_BREED,
+                        PetEntry.COLUMN_PET_WEIGHT,
+                        PetEntry.COLUMN_PET_GENDER};
+                return new CursorLoader(getApplicationContext(), selectedPetURI, projection, null, null, null);
+            case ASYNC_LOADER_ID:
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        displayInfoForSelectedPet(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        clearInputFields();
     }
 }
