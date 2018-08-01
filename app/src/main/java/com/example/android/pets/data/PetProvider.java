@@ -56,11 +56,12 @@ public class PetProvider extends ContentProvider {
                     throw new IllegalArgumentException(getContext().getResources().getString(R.string.illegal_argument_exception_invalid_uri));
             }
         } catch (NullPointerException e) {
-            Log.e(LOG_TAG, "Error queriing database.", e);
+            Log.e(LOG_TAG, "Error querying database.", e);
         }
         if (cursor == null) {
             return null;
         } else {
+            cursor.setNotificationUri(getContext().getContentResolver(), uri);
             return cursor;
         }
     }
@@ -102,10 +103,10 @@ public class PetProvider extends ContentProvider {
         long newRowID = db.insert(PetEntry.TABLE_NAME, null, contentValues);
         if (newRowID != badID) {
             Toast.makeText(getContext(), getContext().getResources().getString(R.string.update_pet_saved), Toast.LENGTH_SHORT).show();
+            getContext().getContentResolver().notifyChange(uri, null);
         } else {
             Toast.makeText(getContext(), getContext().getResources().getString(R.string.update_error_saving_pet), Toast.LENGTH_SHORT).show();
         }
-
         // Once we know the ID of the new row in the table,
         // return the new URI with the ID appended to the end of it
         return ContentUris.withAppendedId(uri, newRowID);
@@ -152,6 +153,7 @@ public class PetProvider extends ContentProvider {
     private int deletePet(Uri uri, String selection, String[] selectionArgs) {
         SQLiteDatabase db = DBHelper.getWritableDatabase();
         int deletedRows = db.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+        getContext().getContentResolver().notifyChange(uri, null);
         return deletedRows;
     }
 
@@ -192,6 +194,7 @@ public class PetProvider extends ContentProvider {
             }
             if (checkContentValues(values, PetEntry.PET_ATTRIBUTE_LIST)) {      // attribute input provided
                 newRowID = db.update(PetEntry.TABLE_NAME, newValues, selection, selectionArgs);
+                getContext().getContentResolver().notifyChange(uri, null);
             } else {
                 throw new IllegalArgumentException(getContext().getResources().getString(R.string.error_input_provide_attributes));
             }

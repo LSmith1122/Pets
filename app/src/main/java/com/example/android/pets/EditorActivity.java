@@ -18,6 +18,7 @@ package com.example.android.pets;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
@@ -61,42 +62,68 @@ public class EditorActivity extends AppCompatActivity {
 
     private PetDBHelper mDBHelper;
 
+    private Intent intent;
+    private Bundle bundle;
+    private Uri selectedPetURI;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editor);
+        initIntentData();
+        initViews();
+        setupSpinner();
+        fulfillExtras();
+    }
+
+    private void initIntentData() {
+        mDBHelper = new PetDBHelper(this);
+        intent = getIntent();
+        bundle = intent.getExtras();
+        selectedPetURI = intent.getData();
+    }
+
+    private void initViews() {
         mIDEditText = (EditText) findViewById(R.id.edit_pet_id);
         mNameEditText = (EditText) findViewById(R.id.edit_pet_name);
         mBreedEditText = (EditText) findViewById(R.id.edit_pet_breed);
         mWeightEditText = (EditText) findViewById(R.id.edit_pet_weight);
         mGenderSpinner = (Spinner) findViewById(R.id.spinner_gender);
-        mDBHelper = new PetDBHelper(this);
-        fulfillExtras();
-        setupSpinner();
     }
 
     private void fulfillExtras() {
-        Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
         if (bundle != null) {
-            switch (bundle.getString(PetContract.INTENT_EXTRA)) {
-                case PetContract.INTENT_UPDATE:                                                             // Update pet
-                    INTENT_MODE = INTENT_UPDATE;
-                    setUI(View.VISIBLE,
-                            View.VISIBLE,
-                            View.VISIBLE,
-                            View.VISIBLE,
-                            View.VISIBLE);
-                    this.setTitle(getApplicationContext().getResources().getString(R.string.action_update_pet));
-                    break;
-                default:                                                                                    // Add pet
-                    INTENT_MODE = INTENT_ADD;
-                    setUI(View.GONE,
-                            View.VISIBLE,
-                            View.VISIBLE,
-                            View.VISIBLE,
-                            View.VISIBLE);
-                    break;
+            try {
+                switch (bundle.getString(PetContract.INTENT_EXTRA)) {
+                    case PetContract.INTENT_UPDATE:                                                             // Update pet
+                        INTENT_MODE = INTENT_UPDATE;
+                        if (isEditingSinglePet()) {
+                            setUI(View.GONE,
+                                    View.VISIBLE,
+                                    View.VISIBLE,
+                                    View.VISIBLE,
+                                    View.VISIBLE);
+                            displayInfoForSelectedPet(getSelectedCursor());
+                        } else {
+                            setUI(View.VISIBLE,
+                                    View.VISIBLE,
+                                    View.VISIBLE,
+                                    View.VISIBLE,
+                                    View.VISIBLE);
+                        }
+                        this.setTitle(getApplicationContext().getResources().getString(R.string.action_update_pet));
+                        break;
+                    default:                                                                                    // Add pet
+                        INTENT_MODE = INTENT_ADD;
+                        setUI(View.GONE,
+                                View.VISIBLE,
+                                View.VISIBLE,
+                                View.VISIBLE,
+                                View.VISIBLE);
+                        break;
+                }
+            } catch (NullPointerException e) {
+                Log.e("Error", "Issue with intent bundle or extras", e);
             }
         } else {
             INTENT_MODE = INTENT_ADD;
@@ -108,12 +135,30 @@ public class EditorActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isEditingSinglePet() { return bundle.containsKey(PetEntry._ID); }
+
     private void setUI(int visibility_1, int visibility_2, int visibility_3, int visibility_4, int visibility_5) {
         mIDEditText.setVisibility(visibility_1);
         mNameEditText.setVisibility(visibility_2);
         mBreedEditText.setVisibility(visibility_3);
         mWeightEditText.setVisibility(visibility_4);
         mGenderSpinner.setVisibility(visibility_5);
+    }
+
+    private void displayInfoForSelectedPet(Cursor cursor) {
+        if (cursor != null) {
+            int id = Integer.parseInt(String.valueOf(ContentUris.parseId(selectedPetURI)));
+            cursor.moveToNext();
+            int nameColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_NAME);
+            int breedColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_BREED);
+            int weightColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_WEIGHT);
+            int genderColumn = cursor.getColumnIndexOrThrow(PetEntry.COLUMN_PET_GENDER);
+            mNameEditText.setText(cursor.getString(nameColumn));            // Name String
+            mBreedEditText.setText(cursor.getString(breedColumn));           // Breed String
+            mWeightEditText.setText(String.valueOf(cursor.getInt(weightColumn)));          // Weight Integer
+            mGenderSpinner.setSelection(cursor.getInt(genderColumn));      // Gender Integer
+            cursor.close();
+        }
     }
 
     /**
@@ -187,14 +232,36 @@ public class EditorActivity extends AppCompatActivity {
         return false;
     }
 
-    private void updatePet() {
+    private void updatePet() {          // TODO: Create 2 different scenarios for updating unknown Pet and updating selected Pet (from CatalogActivity)
+        int newRowID = badID;
+        long id = 0;
         ContentValues values = new ContentValues();
-        long id = Long.valueOf(mIDEditText.getText().toString().trim());
         implementContentValues(values);
-        Uri uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
-        String selection = PetEntry._ID + "=?";
-        String[] selectionArgs = { String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id)) };
-        int newRowID = getContentResolver().update(uriID, values, selection, selectionArgs);
+        if (isEditingSinglePet() && selectedPetURI != null) {
+            newRowID = getContentResolver().update(selectedPetURI, values, null, null);
+        } else {
+            String selection = PetEntry._ID + "=?";
+            String[] selectionArgs = {String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
+            id = Long.valueOf(mIDEditText.getText().toString().trim());
+            Uri uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
+            newRowID = getContentResolver().update(uriID, values, selection, selectionArgs);
+        }
+    }
+
+    private Cursor getSelectedCursor() {
+        Cursor selectedCursor = null;
+        try {
+            String[] projection = {
+                    PetEntry._ID,
+                    PetEntry.COLUMN_PET_NAME,
+                    PetEntry.COLUMN_PET_BREED,
+                    PetEntry.COLUMN_PET_WEIGHT,
+                    PetEntry.COLUMN_PET_GENDER};
+            selectedCursor = getContentResolver().query(selectedPetURI, projection, null, null, null);
+        } catch (NullPointerException e) {
+            Log.e("Error", "Error processing selected cursor", e);
+        }
+        return selectedCursor;
     }
 
     private void implementContentValues(ContentValues values) {

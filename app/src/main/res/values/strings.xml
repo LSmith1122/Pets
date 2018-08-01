@@ -62,6 +62,9 @@
     <!-- Label for dropdown menu option if the pet is male [CHAR LIMIT=20] -->
     <string name="gender_male">Male</string>
 
+    <string name="empty_view_title_text">It\'s a bit lonely here&#8230;</string>
+    <string name="empty_view_subtitle_text">Get started by adding a pet</string>
+
     <!-- Label for dropdown menu option if the pet is female [CHAR LIMIT=20] -->
     <string name="gender_female">Female</string>
     <string name="illegal_exception_invalid_name">Pet requires a name</string>
@@ -77,5 +80,4 @@
     <string name="error_input_provide_id">Pet ID is required</string>
     <string name="error_input_provide_delete_attributes">Please provide either pet ID or Name</string>
     <string name="digits_text">abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
-    <!--<string name="provide_input_name">Pet name is required</string>-->
 </resources>
