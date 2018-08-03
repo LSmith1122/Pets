@@ -41,13 +41,6 @@
             android:paddingLeft="4dp"
             android:orientation="vertical">
 
-            <!-- ID Field -->
-            <EditText
-                android:id="@+id/edit_pet_id"
-                android:hint="@string/hint_pet_id"
-                android:inputType="number"
-                style="@style/EditorFieldStyle" />
-
             <!-- Name field -->
             <EditText
                 android:id="@+id/edit_pet_name"

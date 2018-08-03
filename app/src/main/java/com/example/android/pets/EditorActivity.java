@@ -15,10 +15,12 @@
  */
 package com.example.android.pets;
 
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
@@ -30,6 +32,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -57,23 +60,22 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     private final int ASYNC_LOADER_ID = 0;
     private final int CURSOR_LOADER_ID = 1;
 
-    private EditText mIDEditText;
     private EditText mNameEditText;
     private EditText mBreedEditText;
     private EditText mWeightEditText;
     private Spinner mGenderSpinner;
 
-    private String idString;
     private String nameString;
     private String breedString;
     private String weightString;
     private String appendage = "=?";
 
-
+    private boolean mPetHasChanged = false;
     private boolean mGenderSelected = false;
     private int mGenderSwitch = zero;
     private int mGender = zero;
     private int badID = -1;
+    private int genderInt = badID;
 
     private PetDBHelper mDBHelper;
 
@@ -91,6 +93,14 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         fulfillExtras();
     }
 
+    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            mPetHasChanged = true;
+            return false;
+        }
+    };
+
     private void initIntentData() {
         mDBHelper = new PetDBHelper(this);
         intent = getIntent();
@@ -99,11 +109,13 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     }
 
     private void initViews() {
-        mIDEditText = (EditText) findViewById(R.id.edit_pet_id);
         mNameEditText = (EditText) findViewById(R.id.edit_pet_name);
         mBreedEditText = (EditText) findViewById(R.id.edit_pet_breed);
         mWeightEditText = (EditText) findViewById(R.id.edit_pet_weight);
         mGenderSpinner = (Spinner) findViewById(R.id.spinner_gender);
+        mNameEditText.setOnTouchListener(mTouchListener);
+        mBreedEditText.setOnTouchListener(mTouchListener);
+        mWeightEditText.setOnTouchListener(mTouchListener);
     }
 
     private void fulfillExtras() {
@@ -113,29 +125,13 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
                     case PetContract.INTENT_UPDATE:                                                             // Update pet
                         INTENT_MODE = INTENT_UPDATE;
                         if (isEditingSinglePet()) {
-                            setUI(View.GONE,
-                                    View.VISIBLE,
-                                    View.VISIBLE,
-                                    View.VISIBLE,
-                                    View.VISIBLE);
                             LoaderManager loaderManager = getLoaderManager();
                             loaderManager.initLoader(CURSOR_LOADER_ID, null, this).forceLoad();
-                        } else {
-                            setUI(View.VISIBLE,
-                                    View.VISIBLE,
-                                    View.VISIBLE,
-                                    View.VISIBLE,
-                                    View.VISIBLE);
                         }
                         this.setTitle(getApplicationContext().getResources().getString(R.string.action_update_pet));
                         break;
                     default:                                                                                    // Add pet
                         INTENT_MODE = INTENT_ADD;
-                        setUI(View.GONE,
-                                View.VISIBLE,
-                                View.VISIBLE,
-                                View.VISIBLE,
-                                View.VISIBLE);
                         break;
                 }
             } catch (NullPointerException e) {
@@ -143,23 +139,10 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
             }
         } else {
             INTENT_MODE = INTENT_ADD;
-            setUI(View.GONE,
-                    View.VISIBLE,
-                    View.VISIBLE,
-                    View.VISIBLE,
-                    View.VISIBLE);
         }
     }
 
-    private boolean isEditingSinglePet() { return bundle.containsKey(PetEntry._ID); }
-
-    private void setUI(int visibility_1, int visibility_2, int visibility_3, int visibility_4, int visibility_5) {
-        mIDEditText.setVisibility(visibility_1);
-        mNameEditText.setVisibility(visibility_2);
-        mBreedEditText.setVisibility(visibility_3);
-        mWeightEditText.setVisibility(visibility_4);
-        mGenderSpinner.setVisibility(visibility_5);
-    }
+    private boolean isEditingSinglePet() { return bundle.containsKey(PetEntry._ID) && selectedPetURI != null; }
 
     private void displayInfoForSelectedPet(Cursor cursor) {
         if (cursor != null) {
@@ -197,6 +180,12 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selection = (String) parent.getItemAtPosition(position);
+                view.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        mPetHasChanged = true;
+                    }
+                });
                 if (!TextUtils.isEmpty(selection)) {
                     if (selection.equals(getString(R.string.gender_male))) {
                         mGender = PetEntry.GENDER_MALE; // Male
@@ -217,8 +206,6 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
                     mGenderSwitch = 1;
                 }
             }
-
-            // Because AdapterView is an abstract class, onNothingSelected must be defined
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 mGender = 0; // Unknown
@@ -241,39 +228,27 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         Uri uri = getContentResolver().insert(PetEntry.CONTENT_URI, values);
     }
 
-    private boolean checkAttributes(String value) {
-        if (!TextUtils.isEmpty(value) && !value.equals(null)) {
-            return true;
-        }
-        return false;
-    }
-
     private void updatePet() {
         int newRowID = badID;
-        long id = 0;
         ContentValues values = new ContentValues();
         implementContentValues(values);
-        if (isEditingSinglePet() && selectedPetURI != null) {
+        if (isEditingSinglePet()) {
             newRowID = getContentResolver().update(selectedPetURI, values, null, null);
         } else {
-            String selection = PetEntry._ID + appendage;
-            String[] selectionArgs = {String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
-            id = Long.valueOf(mIDEditText.getText().toString().trim());
-            Uri uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
-            newRowID = getContentResolver().update(uriID, values, selection, selectionArgs);
+            throw new NullPointerException("Error: Possible bad operation or null / invalid URI");
         }
     }
 
     private void implementContentValues(ContentValues values) {
-        if (checkAttributes(mNameEditText.getText().toString().trim())) {
+        if (!isEmpty(mNameEditText.getText().toString().trim())) {
             String name = mNameEditText.getText().toString().trim();
             values.put(PetEntry.COLUMN_PET_NAME, name);
         }
-        if (checkAttributes(mBreedEditText.getText().toString().trim())) {
+        if (!isEmpty(mBreedEditText.getText().toString().trim())) {
             String breed = mBreedEditText.getText().toString().trim();
             values.put(PetEntry.COLUMN_PET_BREED, breed);
         }
-        if (checkAttributes(mWeightEditText.getText().toString().trim())) {
+        if (!isEmpty(mWeightEditText.getText().toString().trim())) {
             int weight = Integer.parseInt(mWeightEditText.getText().toString());
             values.put(PetEntry.COLUMN_PET_WEIGHT, weight);
         }
@@ -283,68 +258,74 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     }
 
     private void deletePet() {
-        int genderInt = badID;
-        recordAttributes();
-        if (mGenderSelected) {
-            genderInt = mGender;
-        }
         if (isValidEntryForDeletion()) {
-            Uri uriID = null;
-            String selection = null;
-            String[] selectionArgs = null;
-            try {
-                if (isEditingSinglePet() && selectedPetURI != null) {
-                    uriID = selectedPetURI;
-                } else {
-                    if (!isEmpty(idString)) {
-                        selection = PetEntry._ID + appendage;
-                        long id = Long.valueOf(idString);
-                        selectionArgs = new String[]{String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
-                        uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
-                    } else if ((!isEmpty(nameString) || !isEmpty(breedString) || !isEmpty(weightString) || genderInt != badID) && isEmpty(idString)) {               // if ID Entry is provided...
-                        List<String> columnList = new ArrayList<>();
-                        List<String> inputList = new ArrayList<>();
-                        if (!isEmpty(nameString)) {
-                            columnList.add(PetEntry.COLUMN_PET_NAME);
-                            inputList.add(nameString);
-                        }
-                        if (!isEmpty(breedString)) {
-                            columnList.add(PetEntry.COLUMN_PET_BREED);
-                            inputList.add(breedString);
-                        }
-                        if (!isEmpty(weightString)) {
-                            columnList.add(PetEntry.COLUMN_PET_WEIGHT);
-                            inputList.add(weightString);
-                        }
-                        if (genderInt != badID) {
-                            columnList.add(PetEntry.COLUMN_PET_GENDER);
-                            inputList.add(String.valueOf(genderInt));
-                        }
-                        // retrieves the 1st & only item in returned list - the method converted all items in provided list into a single selection String
-                        selection = (addSecondaryAttributes(appendage, columnList.toArray(new String[0])))[0];
-                        selectionArgs = addSecondaryAttributes(null, inputList.toArray(new String[0]));
-                        uriID = PetEntry.CONTENT_URI;
-                    } else {
-                        Toast.makeText(this, "Do not provide both ID and other attributes", Toast.LENGTH_SHORT).show();
-                    }
+            DialogInterface.OnClickListener deleteButtonClickListener = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    continuePetDeletion();
+                    finish();
                 }
-                int newRowID = getContentResolver().delete(uriID, selection, selectionArgs);
-                Log.i("TEST", "" + newRowID + " Selection: " + selection + " SelectionArgs: " + selectionArgs);
-                if (newRowID > zero) {
-                    Toast.makeText(this, "Pet data deleted", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Nothing deleted", Toast.LENGTH_SHORT).show();
-                }
-            } catch (IllegalArgumentException e) {
-                Log.e(getApplicationContext().toString(), "Error adding attributes or selecting row ID for deletion", e);
-            }
+            };
+            deletePetDialog(deleteButtonClickListener);
         } else {
             Toast.makeText(this, getApplicationContext().getResources().getString(R.string.error_input_provide_attributes_for_deletion), Toast.LENGTH_LONG).show();
         }
     }
 
+    private void continuePetDeletion() {
+        genderInt = badID;
+        recordAttributes();
+        if (mGenderSelected) {
+            genderInt = mGender;
+        }
+        Uri uriID = null;
+        String selection = null;
+        String[] selectionArgs = null;
+        try {
+            if (isEditingSinglePet()) {
+                uriID = selectedPetURI;
+            } else {
+                if (!isEmpty(nameString) || !isEmpty(breedString) || !isEmpty(weightString) || genderInt != badID) {               // if ID Entry is provided...
+                    retrieveSelectionAndSelectionArgs(selection, selectionArgs);
+                    uriID = PetEntry.CONTENT_URI;
+                }
+            }
+            int newRowID = getContentResolver().delete(uriID, selection, selectionArgs);
+            if (newRowID > zero) {
+                Toast.makeText(this, getApplicationContext().getResources().getString(R.string.update_pet_data_deleted), Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, getApplicationContext().getResources().getString(R.string.update_nothing_deleted), Toast.LENGTH_SHORT).show();
+            }
+        } catch (IllegalArgumentException e) {
+            Log.e(getApplicationContext().toString(), "Error adding attributes or selecting row ID for deletion", e);
+        }
+    }
+
+    private void retrieveSelectionAndSelectionArgs(String selection, String[] selectionArgs) {
+        List<String> columnList = new ArrayList<>();
+        List<String> inputList = new ArrayList<>();
+        if (!isEmpty(nameString)) {
+            columnList.add(PetEntry.COLUMN_PET_NAME);
+            inputList.add(nameString);
+        }
+        if (!isEmpty(breedString)) {
+            columnList.add(PetEntry.COLUMN_PET_BREED);
+            inputList.add(breedString);
+        }
+        if (!isEmpty(weightString)) {
+            columnList.add(PetEntry.COLUMN_PET_WEIGHT);
+            inputList.add(weightString);
+        }
+        if (genderInt != badID) {
+            columnList.add(PetEntry.COLUMN_PET_GENDER);
+            inputList.add(String.valueOf(genderInt));
+        }
+        // retrieves the 1st & only item in returned list - the method converted all items in provided list into a single selection String
+        selection = (addSecondaryAttributes(appendage, columnList.toArray(new String[0])))[0];
+        selectionArgs = addSecondaryAttributes(null, inputList.toArray(new String[0]));
+    }
+
     private void recordAttributes() {
-        idString = mIDEditText.getText().toString().trim();
         nameString = mNameEditText.getText().toString().trim();
         breedString = mBreedEditText.getText().toString().trim();
         weightString = mWeightEditText.getText().toString().trim();
@@ -411,7 +392,7 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     private boolean isEmpty(String value) { return TextUtils.isEmpty(value); }
 
     private boolean isValidEntryForDeletion() {
-        return (!isEmpty(idString) || !isEmpty(nameString) || !isEmpty(breedString) || !isEmpty(weightString) || mGenderSelected);
+        return (!isEmpty(nameString) || !isEmpty(breedString) || !isEmpty(weightString) || mGenderSelected);
     }
 
     @Override
@@ -453,14 +434,69 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
             case R.id.action_delete:
                 if (INTENT_MODE != INTENT_ADD) {
                     deletePet();
-                    finish();
                 }
                 return true;
             case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
+                if (!mPetHasChanged) {
+                    NavUtils.navigateUpFromSameTask(EditorActivity.this);
+                    return true;
+                }
+                DialogInterface.OnClickListener discardButtonClickListener = new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            NavUtils.navigateUpFromSameTask(EditorActivity.this);
+                        }
+                    };
+                showUnsavedChangesDialog(discardButtonClickListener);
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void deletePetDialog(DialogInterface.OnClickListener discardButtonClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.delete_selected_pet_dialog);
+        builder.setPositiveButton(R.string.delete_pet, discardButtonClickListener);
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    private void showUnsavedChangesDialog(DialogInterface.OnClickListener discardButtonClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.unsaved_changes_dialog_msg);
+        builder.setPositiveButton(R.string.discard, discardButtonClickListener);
+        builder.setNegativeButton(R.string.keep_editing, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!mPetHasChanged) {              // if no changes were made, go back...
+            super.onBackPressed();
+            return;
+        }
+        // otherwise, if changes were made...
+        DialogInterface.OnClickListener discardButtonClickListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                };
+        showUnsavedChangesDialog(discardButtonClickListener);
     }
 
     private void clearInputFields() {

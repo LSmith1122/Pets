@@ -12,72 +12,48 @@
 -->
 <resources>
     <!-- Name for the application [CHAR LIMIT=12] -->
-    <string name="app_name">Pets</string>
+    <string name="app_name" translatable="false">Pets</string>
 
-    <!-- Label for overflow menu option that inserts fake pet data into the app [CHAR LIMIT=20] -->
-    <string name="action_insert_dummy_data">Insert Dummy Data</string>
-
-    <!-- Label for overflow menu option that deletes all pet data in the app [CHAR LIMIT=20] -->
-    <string name="action_delete_all_entries">Delete All Pets</string>
-
-    <!-- Title for the activity to add a new pet [CHAR LIMIT=20] -->
-    <string name="editor_activity_title_new_pet">Add a Pet</string>
-
-    <string name="action_update_pet">Update Pet</string>
-
-    <string name="action_delete_pet">Delete Pet</string>
-
-    <!-- Label for editor menu option to save pet and leave editor [CHAR LIMIT=20] -->
-    <string name="action_save">Save</string>
-
-    <!-- Label for editor overflow menu option that deletes the current pet [CHAR LIMIT=20] -->
-    <string name="action_delete">Delete</string>
-
-    <!-- Label for overview category of attributes in the editor [CHAR LIMIT=30] -->
-    <string name="category_overview">Overview</string>
-
-    <!-- Label for gender information in the editor [CHAR LIMIT=30] -->
-    <string name="category_gender">Gender</string>
-
-    <!-- Label for measurement information in the editor [CHAR LIMIT=30] -->
-    <string name="category_measurement">Measurement</string>
-
-    <!-- Text hint for name field in the editor [CHAR LIMIT=30] -->
-    <string name="hint_pet_name">Name</string>
-
-    <!-- Text hint for breed field in the editor [CHAR LIMIT=30] -->
-    <string name="hint_pet_breed">Breed</string>
-
-    <!-- Text hint for name field in the editor [CHAR LIMIT=30] -->
-    <string name="hint_pet_weight">Weight</string>
-
-    <string name="hint_pet_id">ID</string>
-
-    <!-- Units for weight of the pet (kilograms) [CHAR LIMIT=5] -->
-    <string name="unit_pet_weight">kg</string>
-
-    <!-- Label for dropdown menu option if the pet's gender is unknown [CHAR LIMIT=20] -->
-    <string name="gender_unknown">Unknown</string>
-
-    <!-- Label for dropdown menu option if the pet is male [CHAR LIMIT=20] -->
-    <string name="gender_male">Male</string>
-
+    <!-- [CHAR LIMIT=20] -->
+    <string name="action_insert_dummy_data" translatable="true">Insert Test Data</string>
+    <string name="action_delete_all_entries" translatable="true">Delete All Pets</string>
+    <string name="editor_activity_title_new_pet" translatable="true">Add a Pet</string>
+    <string name="action_update_pet" translatable="true">Update Pet</string>
+    <string name="action_delete_pet" translatable="true">Delete Pet</string>
+    <string name="action_save" translatable="true">Save</string>
+    <string name="action_delete" translatable="true">Delete</string>
+    <string name="category_overview" translatable="true">Overview</string>
+    <string name="category_gender" translatable="true">Gender</string>
+    <string name="category_measurement" translatable="true">Measurement</string>
+    <string name="hint_pet_name" translatable="true">Name</string>
+    <string name="hint_pet_breed" translatable="true">Breed</string>
+    <string name="hint_pet_weight" translatable="true">Weight</string>
+    <string name="unit_pet_weight" translatable="false">kg</string>
+    <string name="gender_unknown" translatable="true">Unknown</string>
+    <string name="gender_male" translatable="true">Male</string>
+    <string name="gender_female" translatable="true">Female</string>
     <string name="empty_view_title_text">It\'s a bit lonely here&#8230;</string>
     <string name="empty_view_subtitle_text">Get started by adding a pet</string>
-
-    <!-- Label for dropdown menu option if the pet is female [CHAR LIMIT=20] -->
-    <string name="gender_female">Female</string>
-    <string name="illegal_exception_invalid_name">Pet requires a name</string>
-    <string name="illegal_exception_invalid_gender">Invalid gender value</string>
-    <string name="illegal_exception_invalid_weight">Invalid weight</string>
-    <string name="illegal_argument_exception_update_not_supported">Update is not supported for </string>
-    <string name="illegal_argument_exception_insertion_not_supported">Insertion is not supported for </string>
-    <string name="illegal_argument_exception_deletion_not_supported">Deletion is not supported for </string>
-    <string name="illegal_argument_exception_invalid_uri">Invalid URI</string>
-    <string name="update_pet_saved">Pet saved!</string>
-    <string name="update_error_saving_pet">Error saving pet&#8230;</string>
-    <string name="error_input_provide_attributes">Please provide valid input to update pet attributes</string>
-    <string name="error_input_provide_attributes_for_deletion">Please provide valid pet attribute input</string>
-    <string name="error_input_provide_delete_attributes">Please provide either pet ID or Name</string>
-    <string name="digits_text">abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <string name="illegal_exception_invalid_name" translatable="true">Pet requires a name</string>
+    <string name="illegal_exception_invalid_gender" translatable="true">Invalid gender value</string>
+    <string name="illegal_exception_invalid_weight" translatable="true">Invalid weight</string>
+    <string name="illegal_argument_exception_update_not_supported" translatable="true">Update is not supported for </string>
+    <string name="illegal_argument_exception_insertion_not_supported" translatable="true">Insertion is not supported for </string>
+    <string name="illegal_argument_exception_deletion_not_supported" translatable="true">Deletion is not supported for </string>
+    <string name="illegal_argument_exception_invalid_uri" translatable="true">Invalid URI</string>
+    <string name="update_pet_saved" translatable="true">Pet saved!</string>
+    <string name="update_error_saving_pet" translatable="true">Error saving pet&#8230;</string>
+    <string name="update_pet_data_deleted" translatable="true">Pet data deleted</string>
+    <string name="update_nothing_deleted" translatable="true">Nothing was deleted</string>
+    <string name="error_input_provide_attributes" translatable="true">Please provide valid input to update pet attributes</string>
+    <string name="error_input_provide_attributes_for_deletion" translatable="true">Please provide valid pet attribute input</string>
+    <string name="digits_text" translatable="false">abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <string name="unsaved_changes_dialog_msg" translatable="true">Discard your changes and quit editing?</string>
+    <string name="delete_selected_pet_dialog" translatable="true">Are you sure you want to delete this pet data?\nThis cannot be undone.</string>
+    <string name="delete_all_pet_dialog" translatable="true">Are you sure you want to delete all pet data?\nThis cannot be undone.</string>
+    <string name="discard" translatable="true">Discard</string>
+    <string name="keep_editing" translatable="true">Keep Editing</string>
+    <string name="delete_pet" translatable="true">Delete Pet(s)</string>
+    <string name="delete_all_pets" translatable="true">Delete All Pets</string>
+    <string name="cancel" translatable="true">Cancel</string>
 </resources>

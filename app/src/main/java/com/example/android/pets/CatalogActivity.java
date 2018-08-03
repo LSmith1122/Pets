@@ -15,10 +15,12 @@
  */
 package com.example.android.pets;
 
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
@@ -112,19 +114,19 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
             case R.id.action_insert_dummy_data:
                 insertDummyPetData();
                 return true;
-            case R.id.action_update_pet:
-                bundle = new Bundle();
-                bundle.putString(PetContract.INTENT_EXTRA, PetContract.INTENT_UPDATE);
-                intent.putExtras(bundle);
-                startActivity(intent);
-                return true;
             case R.id.action_delete_all_entries:
-                int deleteRows = getContentResolver().delete(PetEntry.CONTENT_URI, null, null);
-                if (deleteRows > zero) {
-                    Toast.makeText(this, "All data deleted", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Error deleting data", Toast.LENGTH_SHORT).show();
-                }
+                DialogInterface.OnClickListener deletePetDialogOnClickListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        int deleteRows = getContentResolver().delete(PetEntry.CONTENT_URI, null, null);
+                        if (deleteRows > zero) {
+                            Toast.makeText(getApplicationContext(), "All data deleted", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Error deleting data", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                };
+                deletePetDialog(deletePetDialogOnClickListener);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -161,5 +163,20 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         cursorAdapter.swapCursor(null);
+    }
+
+    private void deletePetDialog(DialogInterface.OnClickListener discardButtonClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.delete_all_pet_dialog);
+        builder.setPositiveButton(R.string.delete_all_pets, discardButtonClickListener);
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 }
