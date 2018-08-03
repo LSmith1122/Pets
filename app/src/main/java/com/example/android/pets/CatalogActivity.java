@@ -121,6 +121,7 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
             case R.id.action_delete_all_entries:
                 int deleteRows = getContentResolver().delete(PetEntry.CONTENT_URI, null, null);
                 if (deleteRows > zero) {
+                    deleteDatabase(PetDBHelper.DATABASE_NAME);
                     Toast.makeText(this, "All data deleted", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "Error deleting data", Toast.LENGTH_SHORT).show();

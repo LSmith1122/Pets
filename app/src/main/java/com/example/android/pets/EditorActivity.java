@@ -41,6 +41,9 @@ import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetContract.PetEntry;
 import com.example.android.pets.data.PetDBHelper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Allows user to create a new pet or edit an existing one.
  */
@@ -59,6 +62,13 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     private EditText mBreedEditText;
     private EditText mWeightEditText;
     private Spinner mGenderSpinner;
+
+    private String idString;
+    private String nameString;
+    private String breedString;
+    private String weightString;
+    private String appendage = "=?";
+
 
     private boolean mGenderSelected = false;
     private int mGenderSwitch = zero;
@@ -246,7 +256,7 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         if (isEditingSinglePet() && selectedPetURI != null) {
             newRowID = getContentResolver().update(selectedPetURI, values, null, null);
         } else {
-            String selection = PetEntry._ID + "=?";
+            String selection = PetEntry._ID + appendage;
             String[] selectionArgs = {String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
             id = Long.valueOf(mIDEditText.getText().toString().trim());
             Uri uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
@@ -273,31 +283,130 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     }
 
     private void deletePet() {
-        String idString = mIDEditText.getText().toString().trim();
-        String nameString = mNameEditText.getText().toString().trim();
-        String breedString = mBreedEditText.getText().toString().trim();
-        String weightString = mWeightEditText.getText().toString().trim();
         int genderInt = badID;
+        recordAttributes();
         if (mGenderSelected) {
             genderInt = mGender;
         }
-        if (isEmpty(idString) && isEmpty(nameString) && isEmpty(breedString) && isEmpty(weightString) && !mGenderSelected) {       // No ID provided by User
-            Toast.makeText(this, getApplicationContext().getResources().getString(R.string.error_input_provide_attributes_for_deletion), Toast.LENGTH_LONG).show();
-        } else {
-            String selection = PetEntry._ID + "=?";
-            long id = Long.valueOf(idString);
-            String[] selectionArgs = new String[] {String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
-            Uri uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
-            int newRowID = getContentResolver().delete(uriID, selection, selectionArgs);
-            if (newRowID > zero) {
-                Toast.makeText(this, "Pet data deleted", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Nothing deleted", Toast.LENGTH_SHORT).show();
+        if (isValidEntryForDeletion()) {
+            Uri uriID;
+            String selection;
+            String[] selectionArgs;
+            try {
+                if (!isEmpty(nameString) && isEmpty(idString)) {               // if ID Entry is provided...
+                    String[] secondaryColumnAttributeList = null;
+                    List<String> columnList = new ArrayList<>();
+                    List<String> inputList = new ArrayList<>();
+                    columnList.add(PetEntry.COLUMN_PET_NAME);
+                    inputList.add(nameString);
+                    if (!isEmpty(breedString)) {
+                        columnList.add(PetEntry.COLUMN_PET_BREED);
+                        inputList.add(breedString);
+                    }
+                    if (!isEmpty(weightString)) {
+                        columnList.add(PetEntry.COLUMN_PET_WEIGHT);
+                        inputList.add(weightString);
+                    }
+                    if (genderInt != badID) {
+                        columnList.add(PetEntry.COLUMN_PET_GENDER);
+                        inputList.add(String.valueOf(genderInt));
+                    }
+                    // retrieves the 1st & only item in returned list - the method converted all items in provided list into a single selection String
+                    selection = (addSecondaryAttributes(appendage, columnList.toArray(new String[0])))[0];
+                    // TODO: Warning: mGender MIGHT need to be an Integer instead of a String...
+                    selectionArgs = addSecondaryAttributes(null, inputList.toArray(new String[0]));
+                    uriID = PetEntry.CONTENT_URI;
+                } else {                    // if Name Entry is provided...
+                    selection = PetEntry._ID + appendage;
+                    long id = Long.valueOf(idString);
+                    selectionArgs = new String[] {String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
+                    uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
+                }
+                int newRowID = getContentResolver().delete(uriID, selection, selectionArgs);
+                Log.i("TEST", "" + newRowID + " Selection: " + selection + " SelectionArgs: " + selectionArgs);
+                if (newRowID > zero) {
+                    Toast.makeText(this, "Pet data deleted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Nothing deleted", Toast.LENGTH_SHORT).show();
+                }
+            } catch (IllegalArgumentException e) {
+                Log.e(getApplicationContext().toString(), "Error adding attributes or selecting row ID for deletion", e);
             }
+        } else {
+            Toast.makeText(this, getApplicationContext().getResources().getString(R.string.error_input_provide_attributes_for_deletion), Toast.LENGTH_LONG).show();
         }
     }
 
+    private void recordAttributes() {
+        idString = mIDEditText.getText().toString().trim();
+        nameString = mNameEditText.getText().toString().trim();
+        breedString = mBreedEditText.getText().toString().trim();
+        weightString = mWeightEditText.getText().toString().trim();
+    }
+
+    private String[] addSecondaryAttributes(String s, String[] valueList) {
+        List<String> list = new ArrayList<>();
+        if (s == null) {                            // to use with selectionArgs ONLY
+            list = compileSecondaryAttributes(null, valueList);
+            return list.toArray(new String[0]);
+        } else if (s.equals(appendage)) {                                    // to use with selection ONLY
+            list = compileSecondaryAttributes(s, valueList);
+            StringBuilder builder = new StringBuilder();
+            String a = ", ";
+            for (int i = 0; i < list.size(); i++) {
+                int lastPos = list.size() - 1;
+                String ending = "";
+                if (i < lastPos) {
+                    ending = a;
+                }
+                String value = list.get(i) + ending;
+                builder.append(value);
+            }
+            return new String[] { builder.toString() };
+        } else {
+            throw new IllegalArgumentException("Incorrect appendage statement while adding secondary attributes");
+        }
+    }
+
+    private List<String> compileSecondaryAttributes(String s, String[] valueList) {
+        List<String> list = new ArrayList<>();
+        for (int i = 0; i < valueList.length; i++) {
+            if (s == null) {        // for selectionArgs String[] ONLY
+                s = "";
+                if (!isEmpty(valueList[i])) {
+                    String value = valueList[i] + s;
+                    list.add(value);
+                }
+            } else if (s.equals(appendage)) {                // for selection String ONLY
+                switch (valueList[i]) {
+                    case PetEntry.COLUMN_PET_NAME:
+                        addValuesToList(list, valueList[i], s);
+                        break;
+                    case PetEntry.COLUMN_PET_BREED:
+                        addValuesToList(list, valueList[i], s);
+                        break;
+                    case PetEntry.COLUMN_PET_WEIGHT:
+                        addValuesToList(list, valueList[i], s);
+                        break;
+                    case PetEntry.COLUMN_PET_GENDER:
+                        addValuesToList(list, valueList[i], s);
+                        break;
+                }
+            }
+        }
+        return list;
+    }
+
+    private void addValuesToList(List<String> list, String string, String s) {
+        String value = string + s;
+        list.add(value);
+    }
+
     private boolean isEmpty(String value) { return TextUtils.isEmpty(value); }
+
+    private boolean isValidEntryForDeletion() {
+        return (!isEmpty(idString) || !isEmpty(nameString));
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
