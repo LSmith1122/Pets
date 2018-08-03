@@ -289,38 +289,44 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
             genderInt = mGender;
         }
         if (isValidEntryForDeletion()) {
-            Uri uriID;
-            String selection;
-            String[] selectionArgs;
+            Uri uriID = null;
+            String selection = null;
+            String[] selectionArgs = null;
             try {
-                if (!isEmpty(nameString) && isEmpty(idString)) {               // if ID Entry is provided...
-                    String[] secondaryColumnAttributeList = null;
-                    List<String> columnList = new ArrayList<>();
-                    List<String> inputList = new ArrayList<>();
-                    columnList.add(PetEntry.COLUMN_PET_NAME);
-                    inputList.add(nameString);
-                    if (!isEmpty(breedString)) {
-                        columnList.add(PetEntry.COLUMN_PET_BREED);
-                        inputList.add(breedString);
+                if (isEditingSinglePet() && selectedPetURI != null) {
+                    uriID = selectedPetURI;
+                } else {
+                    if (!isEmpty(idString)) {
+                        selection = PetEntry._ID + appendage;
+                        long id = Long.valueOf(idString);
+                        selectionArgs = new String[]{String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
+                        uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
+                    } else if ((!isEmpty(nameString) || !isEmpty(breedString) || !isEmpty(weightString) || genderInt != badID) && isEmpty(idString)) {               // if ID Entry is provided...
+                        List<String> columnList = new ArrayList<>();
+                        List<String> inputList = new ArrayList<>();
+                        if (!isEmpty(nameString)) {
+                            columnList.add(PetEntry.COLUMN_PET_NAME);
+                            inputList.add(nameString);
+                        }
+                        if (!isEmpty(breedString)) {
+                            columnList.add(PetEntry.COLUMN_PET_BREED);
+                            inputList.add(breedString);
+                        }
+                        if (!isEmpty(weightString)) {
+                            columnList.add(PetEntry.COLUMN_PET_WEIGHT);
+                            inputList.add(weightString);
+                        }
+                        if (genderInt != badID) {
+                            columnList.add(PetEntry.COLUMN_PET_GENDER);
+                            inputList.add(String.valueOf(genderInt));
+                        }
+                        // retrieves the 1st & only item in returned list - the method converted all items in provided list into a single selection String
+                        selection = (addSecondaryAttributes(appendage, columnList.toArray(new String[0])))[0];
+                        selectionArgs = addSecondaryAttributes(null, inputList.toArray(new String[0]));
+                        uriID = PetEntry.CONTENT_URI;
+                    } else {
+                        Toast.makeText(this, "Do not provide both ID and other attributes", Toast.LENGTH_SHORT).show();
                     }
-                    if (!isEmpty(weightString)) {
-                        columnList.add(PetEntry.COLUMN_PET_WEIGHT);
-                        inputList.add(weightString);
-                    }
-                    if (genderInt != badID) {
-                        columnList.add(PetEntry.COLUMN_PET_GENDER);
-                        inputList.add(String.valueOf(genderInt));
-                    }
-                    // retrieves the 1st & only item in returned list - the method converted all items in provided list into a single selection String
-                    selection = (addSecondaryAttributes(appendage, columnList.toArray(new String[0])))[0];
-                    // TODO: Warning: mGender MIGHT need to be an Integer instead of a String...
-                    selectionArgs = addSecondaryAttributes(null, inputList.toArray(new String[0]));
-                    uriID = PetEntry.CONTENT_URI;
-                } else {                    // if Name Entry is provided...
-                    selection = PetEntry._ID + appendage;
-                    long id = Long.valueOf(idString);
-                    selectionArgs = new String[] {String.valueOf(ContentUris.withAppendedId(PetEntry.CONTENT_URI, id))};
-                    uriID = ContentUris.withAppendedId(PetEntry.CONTENT_URI, id);
                 }
                 int newRowID = getContentResolver().delete(uriID, selection, selectionArgs);
                 Log.i("TEST", "" + newRowID + " Selection: " + selection + " SelectionArgs: " + selectionArgs);
@@ -405,7 +411,7 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     private boolean isEmpty(String value) { return TextUtils.isEmpty(value); }
 
     private boolean isValidEntryForDeletion() {
-        return (!isEmpty(idString) || !isEmpty(nameString));
+        return (!isEmpty(idString) || !isEmpty(nameString) || !isEmpty(breedString) || !isEmpty(weightString) || mGenderSelected);
     }
 
     @Override

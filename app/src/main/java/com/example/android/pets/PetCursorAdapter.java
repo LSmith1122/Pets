@@ -82,6 +82,9 @@ public class PetCursorAdapter extends CursorAdapter {
                         break;
                 }
                 StringBuilder builder = new StringBuilder();
+                if (TextUtils.isEmpty(currentBreed)) {
+                    currentBreed = "[Unknown]";
+                }
                 builder.append(currentBreed).append(divider).append(currentGender);
                 tvName.setText(currentName);
                 tvSummary.setText(builder.toString());
